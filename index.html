@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Point Scanner</title>
+    <title>ระบบสแกนคิวอาร์โค้ดสะสมคะแนน</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -45,21 +45,21 @@
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-qrcode text-indigo-600 mr-3"></i>
-                QR Point Scanner
+                ระบบสแกนสะสมคะแนน
             </h1>
-            <p class="text-gray-600">Scan QR codes to earn points and track your progress</p>
+            <p class="text-gray-600">สแกนคิวอาร์โค้ดเพื่อรับคะแนนและติดตามประวัติของคุณ</p>
         </div>
 
         <!-- Login Section -->
         <div id="loginSection" class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-user text-blue-600 mr-2"></i>
-                User Login
+                เข้าสู่ระบบผู้ใช้งาน
             </h2>
             <form id="loginForm" class="space-y-4">
-                <input type="text" id="uid" class="w-full border rounded-lg px-4 py-2" placeholder="Enter UID" required>
+                <input type="text" id="uid" class="w-full border rounded-lg px-4 py-2" placeholder="กรอกรหัสผู้ใช้งาน (UID)" required>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold w-full sm:w-auto">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    <i class="fas fa-sign-in-alt mr-2"></i>เข้าสู่ระบบ
                 </button>
             </form>
             <div id="loginError" class="text-red-600 mt-2 hidden"></div>
@@ -70,7 +70,7 @@
             <!-- Logout -->
             <div class="flex justify-end mb-4">
                 <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden">
-                    <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบ
                 </button>
             </div>
 
@@ -78,7 +78,7 @@
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-camera text-green-600 mr-2"></i>
-                    Scanner
+                    เครื่องสแกน
                 </h2>
                 <div class="text-center w-full">
                     <div class="scanner-overlay mb-4">
@@ -92,15 +92,15 @@
                     </div>
                     <div class="space-y-3">
                         <button id="startScan" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-                            <i class="fas fa-play mr-2"></i>Start Scanning
+                            <i class="fas fa-play mr-2"></i>เริ่มการสแกน
                         </button>
                         <button id="stopScan" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
-                            <i class="fas fa-stop mr-2"></i>Stop Scanning
+                            <i class="fas fa-stop mr-2"></i>หยุดการสแกน
                         </button>
                     </div>
                     <div id="scanStatus" class="mt-4 text-gray-600">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Click "Start Scanning" to begin
+                        คลิก "เริ่มการสแกน" เพื่อเริ่มต้น
                     </div>
                 </div>
             </div>
@@ -131,12 +131,12 @@
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-history text-gray-600 mr-2"></i>
-                    Recent Scans
+                    ประวัติการสแกนล่าสุด
                 </h2>
                 <div id="recentScans" class="space-y-3">
                     <div class="text-gray-500 text-center py-8">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
-                        <p>No scans yet. Start scanning to see your history!</p>
+                        <p>ยังไม่มีประวัติ เริ่มสแกนเพื่อสะสมคะแนน!</p>
                     </div>
                 </div>
             </div>
@@ -186,7 +186,7 @@
       const uid = $('#uid').val().trim();
       if (!uid) return;
       $('#loginError').addClass('hidden');
-      $('body').LoadingOverlay('show',{text:'Logging in...'});
+      $('body').LoadingOverlay('show',{text:'กำลังเข้าสู่ระบบ...'});
       
       fetch(`${OPENSHEET_URL}/Users`)
         .then(response => response.json())
@@ -211,7 +211,7 @@
         .catch(error => {
             console.error(error);
             $('body').LoadingOverlay('hide');
-            $('#loginError').removeClass('hidden').text('Login failed. Check Spreadsheet ID and Sharing settings.');
+            $('#loginError').removeClass('hidden').text('เข้าสู่ระบบล้มเหลว โปรดตรวจสอบ Spreadsheet ID และการตั้งค่าการแชร์');
         });
     });
 
@@ -233,7 +233,7 @@
     $(document).ready(() => {
       const stored = localStorage.getItem('appUid');
       if (stored) {
-        $('body').LoadingOverlay('show',{text:'Logging in...'});
+        $('body').LoadingOverlay('show',{text:'กำลังเข้าสู่ระบบ...'});
         fetch(`${OPENSHEET_URL}/Users`)
             .then(response => response.json())
             .then(users => {
@@ -283,7 +283,7 @@
 
     fetchUserHistory() {
       if (!currentUser) return;
-      $('body').LoadingOverlay('show', { text: 'Loading your data...' });
+      $('body').LoadingOverlay('show', { text: 'กำลังโหลดข้อมูลของคุณ...' });
       
       // Fetch scan history via OpenSheet
       fetch(`${OPENSHEET_URL}/Scans`)
@@ -311,23 +311,23 @@
         .catch(error => {
             console.error(error);
             $('body').LoadingOverlay('hide');
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load your scan data.' });
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถโหลดข้อมูลการสแกนของคุณได้' });
         });
     }
 
     async startScanning() {
       try {
-        $('#scanStatus').html('<i class="fas fa-spinner fa-spin mr-1"></i>Starting camera...');
+        $('#scanStatus').html('<i class="fas fa-spinner fa-spin mr-1"></i>กำลังเปิดกล้อง...');
         this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         $('#video')[0].srcObject = this.stream;
         $('#startScan').addClass('hidden');
         $('#stopScan').removeClass('hidden');
-        $('#scanStatus').html('<i class="fas fa-search mr-1"></i>Scanning for QR codes...');
+        $('#scanStatus').html('<i class="fas fa-search mr-1"></i>กำลังค้นหาคิวอาร์โค้ด...');
         this.scanning = true;
         this.scanLoop();
       } catch {
-        Swal.fire({ icon:'error',title:'Camera Error',text:'Unable to access camera.' });
-        $('#scanStatus').html('<i class="fas fa-exclamation-triangle mr-1"></i>Camera access denied');
+        Swal.fire({ icon:'error',title:'ข้อผิดพลาดของกล้อง',text:'ไม่สามารถเข้าถึงกล้องได้' });
+        $('#scanStatus').html('<i class="fas fa-exclamation-triangle mr-1"></i>การเข้าถึงกล้องถูกปฏิเสธ');
       }
     }
 
@@ -337,7 +337,7 @@
       $('#video')[0].srcObject = null;
       $('#startScan').removeClass('hidden');
       $('#stopScan').addClass('hidden');
-      $('#scanStatus').html('<i class="fas fa-info-circle mr-1"></i>Click "Start Scanning" to begin');
+      $('#scanStatus').html('<i class="fas fa-info-circle mr-1"></i>คลิก "เริ่มการสแกน" เพื่อเริ่มต้น');
     }
 
     async scanLoop() {
@@ -355,16 +355,16 @@
         if (!data.event || !data.points || !data.date) throw new Error();
         const today = new Date().toISOString().split('T')[0];
         if (data.date !== today) {
-          return Swal.fire({ icon:'warning',title:'QR Code Expired',text:'You can only claim once per day.' });
+          return Swal.fire({ icon:'warning',title:'คิวอาร์โค้ดหมดอายุ',text:'คุณสามารถรับคะแนนจากกิจกรรมนี้ได้วันละครั้งเท่านั้น' });
         }
         if (this.userHistory.some(s => s.event === data.event && s.date === data.date)) {
-          return Swal.fire({ icon:'info',title:'Already Scanned',text:'ท่านได้รับแต้มจากบูทนี้แล้ว ไม่สามารถรับคะแนนซ้ำได้' });
+          return Swal.fire({ icon:'info',title:'รับคะแนนไปแล้ว',text:'ท่านได้รับแต้มจากบูทนี้แล้ว ไม่สามารถรับคะแนนซ้ำได้' });
         }
         this.stopScanning();
         this.showSuccess(data);
         await this.saveRecord(data);
       } catch {
-        Swal.fire({ icon:'error',title:'Invalid QR Code',text:'QR code format not recognized.' });
+        Swal.fire({ icon:'error',title:'คิวอาร์โค้ดไม่ถูกต้อง',text:'รูปแบบคิวอาร์โค้ดไม่ถูกต้อง หรือไม่ได้มาจากระบบของเรา' });
       }
     }
 
@@ -375,7 +375,7 @@
         title:'ได้รับคะแนน !',
         html:`<div class="text-center">
                 <div class="text-lg font-semibold text-gray-800 mb-2">กิจกรรม: ${data.event}</div>
-                <div class="text-3xl font-bold text-green-600">+${data.points} Points!</div>
+                <div class="text-3xl font-bold text-green-600">+${data.points} คะแนน!</div>
               </div>`,
         confirmButtonText:'เรียบร้อย!', confirmButtonColor:'#10b981'
       });
@@ -393,7 +393,7 @@
         number:    currentUser.number
       };
       
-      $('body').LoadingOverlay('show',{ text:'Syncing...' });
+      $('body').LoadingOverlay('show',{ text:'กำลังบันทึกข้อมูล...' });
       
       // Send POST request with text/plain to avoid CORS preflight options issues
       // This MUST still use API_URL (Google Apps Script) because OpenSheet is read-only
@@ -414,7 +414,7 @@
       .catch(err => {
         console.error('Save failed', err);
         $('body').LoadingOverlay('hide');
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to save data to the server.' });
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถบันทึกข้อมูลลงเซิร์ฟเวอร์ได้' });
       });
     }
 
@@ -434,7 +434,7 @@
         return $('#recentScans').html(`
           <div class="text-gray-500 text-center py-8">
             <i class="fas fa-inbox text-4xl mb-2"></i>
-            <p>No scans yet. Start scanning to see your history!</p>
+            <p>ยังไม่มีประวัติ เริ่มสแกนเพื่อสะสมคะแนน!</p>
           </div>`);
       }
       const html = recent.map(r => `
