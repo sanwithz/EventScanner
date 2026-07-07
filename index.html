@@ -179,7 +179,7 @@
         currentUser = user;
         localStorage.setItem('appUid', uid);
         showAppContent();
-        Swal.fire({ icon:'success', title:'ยินดีต้อนรับ!', text:`สวัสดี ${user.name} (${user.class}` });
+        Swal.fire({ icon:'success', title:'ยินดีต้อนรับ!', text:`สวัสดี ${user.name} (${user.class})` });
       } else {
         $('#loginError').removeClass('hidden').text('UID ไม่ถูกต้อง หรือไม่พบผู้ใช้ในระบบ');
       }
