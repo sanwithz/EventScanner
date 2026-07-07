@@ -516,21 +516,36 @@
         const docDefinition = {
             pageSize: 'A4',
             pageOrientation: 'landscape',
-            pageMargins: [40, 60, 40, 60],
+            pageMargins: [40, 80, 40, 60], // Adjusted margins for logo and signature
             defaultStyle: {
                 font: 'promptTH' // Use promptTH as standard font
             },
+            images: {
+                logo: 'https://lh3.googleusercontent.com/d/1aL9zhKAXPZBiZ4zAM8jWSPmiu5iaofVR',
+                certificateBackground: 'https://raw.githubusercontent.com/sanwithz/font/main/NPK%20TEMPLATE%202024.jpg',
+                signature: 'https://raw.githubusercontent.com/sanwithz/font/main/SIG.001.png',
+            },
+            background: [
+                {
+                    image: 'certificateBackground',
+                    width: 841.89, // A4 Landscape width
+                    height: 595.28 // A4 Landscape height
+                }
+            ],
             content: [
-                { text: 'เกียรติบัตร', style: 'header', alignment: 'center', margin: [0, 0, 0, 20] },
-                { text: 'ขอมอบเกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า', alignment: 'center', fontSize: 18, margin: [0, 0, 0, 15] },
-                { text: currentUser.name, alignment: 'center', fontSize: 32, bold: true, color: '#1d4ed8', margin: [0, 0, 0, 10] },
-                { text: `ได้เข้าร่วมกิจกรรมวันวิทยาศาสตร์ ประจำปีการศึกษา 2569`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 30] },
+                { image: 'logo', width: 70, alignment: 'center', margin: [0, 0, 0, 10] },
+                { text: 'เกียรติบัตร', style: 'header', alignment: 'center', margin: [0, 0, 0, 15] },
+                { text: 'ขอมอบเกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า', alignment: 'center', fontSize: 18, margin: [0, 0, 0, 10] },
+                { text: currentUser.name, alignment: 'center', fontSize: 32, bold: true, color: '#1d4ed8', margin: [0, 0, 0, 5] },
+                { text: `ชั้น ${currentUser.class} เลขที่ ${currentUser.number || '-'}`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 10] },
+                { text: `ได้เข้าร่วมกิจกรรมและสะสมคะแนนรวมทั้งสิ้น ${totalPts} คะแนน`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 15] },
                 { text: 'ขอให้มีความสุขความเจริญและประสบความสำเร็จตลอดไป', alignment: 'center', fontSize: 16 },
+                { image: 'signature', width: 100, alignment: 'center', margin: [0, 15, 0, 5] },
                 { 
                     text: 'ให้ไว้ ณ วันที่ ' + new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }), 
                     alignment: 'center', 
                     fontSize: 14, 
-                    margin: [0, 50, 0, 0] 
+                    margin: [0, 0, 0, 0] 
                 }
             ],
             styles: {
