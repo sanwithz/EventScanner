@@ -43,7 +43,7 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold texst-gray-800 mb-2">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-qrcode text-indigo-600 mr-3"></i>
                 ระบบสแกนสะสมคะแนน
             </h1>
@@ -67,9 +67,12 @@
 
         <!-- Main App Content -->
         <div id="appContent" style="display:none;">
-            <!-- Logout -->
-            <div class="flex justify-end mb-4">
-                <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden">
+            <!-- Actions: Refresh & Logout -->
+            <div class="flex justify-end gap-2 mb-4">
+                <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg hidden transition-colors">
+                    <i class="fas fa-sync-alt mr-1"></i>รีเฟรชข้อมูล
+                </button>
+                <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden transition-colors">
                     <i class="fas fa-sign-out-alt mr-1"></i>ออกจากระบบ
                 </button>
             </div>
@@ -162,6 +165,8 @@
       $('#loginSection').hide();
       $('#appContent').show();
       $('#logoutBtn').removeClass('hidden');
+      $('#refreshBtn').removeClass('hidden');
+      
       if (!window.qrScanner) {
         window.qrScanner = new QRPointScanner();
       } else {
@@ -215,6 +220,13 @@
         });
     });
 
+    // Refresh Button logic
+    $('#refreshBtn').on('click', () => {
+      if (window.qrScanner) {
+        window.qrScanner.fetchUserHistory();
+      }
+    });
+
     // Logout
     $('#logoutBtn').on('click', () => {
       localStorage.removeItem('appUid');
@@ -224,6 +236,7 @@
       }
       $('#appContent').hide();
       $('#logoutBtn').hide();
+      $('#refreshBtn').hide();
       $('#loginSection').show();
       $('#uid').val('');
       $('#loginError').addClass('hidden').text('');
