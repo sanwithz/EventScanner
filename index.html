@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Point Scanner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Canvas-Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <!-- Loading Overlay -->
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <!-- SweetAlert -->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- ZXing barcode scanner -->
+    <script src="https://unpkg.com/@zxing/library@0.15.1/umd/index.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        * { font-family: 'Sarabun', sans-serif; }
+        #video { width: 100%; max-width: 400px; height: 300px; object-fit: cover; border-radius: 12px; }
+        .scanner-overlay { position: relative; display: inline-block; }
+        .scanner-frame {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 200px; height: 200px; border-radius: 12px;
+        }
+        .scanner-corners { position: absolute; width: 30px; height: 30px; }
+        .scanner-corners::before { content: ''; position: absolute; width: 100%; height: 3px; background: #10b981; }
+        .scanner-corners::after { content: ''; position: absolute; width: 3px; height: 100%; background: #10b981; }
+        .corner-tl { top: -3px; left: -3px; }
+        .corner-tr { top: -3px; right: -3px; }
+        .corner-bl { bottom: -3px; left: -3px; }
+        .corner-br { bottom: -3px; right: -3px; }
+        .corner-tr::before, .corner-tr::after { right: 0; }
+        .corner-bl::before, .corner-bl::after { bottom: 0; }
+        .corner-br::before, .corner-br::after { right: 0; bottom: 0; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-qrcode text-indigo-600 mr-3"></i>
+                QR Point Scanner
+            </h1>
+            <p class="text-gray-600">Scan QR codes to earn points and track your progress</p>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-user text-blue-600 mr-2"></i>
+                User Login
+            </h2>
+            <form id="loginForm" class="space-y-4">
+                <input type="text" id="uid" class="w-full border rounded-lg px-4 py-2" placeholder="Enter UID" required>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold w-full sm:w-auto">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </form>
+            <div id="loginError" class="text-red-600 mt-2 hidden"></div>
+        </div>
+
+        <!-- Main App Content -->
+        <div id="appContent" style="display:none;">
+            <!-- Logout -->
+            <div class="flex justify-end mb-4">
+                <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden">
+                    <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                </button>
+            </div>
+
+            <!-- Scanner Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-camera text-green-600 mr-2"></i>
+                    Scanner
+                </h2>
+                <div class="text-center">
+                    <div class="scanner-overlay mb-4">
+                        <video id="video" autoplay muted playsinline class="bg-gray-200"></video>
+                        <div class="scanner-frame">
+                            <div class="scanner-corners corner-tl"></div>
+                            <div class="scanner-corners corner-tr"></div>
+                            <div class="scanner-corners corner-bl"></div>
+                            <div class="scanner-corners corner-br"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <button id="startScan" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                            <i class="fas fa-play mr-2"></i>Start Scanning
+                        </button>
+                        <button id="stopScan" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors hidden">
+                            <i class="fas fa-stop mr-2"></i>Stop Scanning
+                        </button>
+                    </div>
+                    <div id="scanStatus" class="mt-4 text-gray-600">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Click "Start Scanning" to begin
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points Summary -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-trophy text-yellow-600 mr-2"></i>
+                    คะแนนสะสมของคุณ
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center">
+                        <div class="text-2xl font-bold" id="totalPoints">0</div>
+                        <div class="text-sm opacity-90 mt-2">คะแนนทั้งหมด</div>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg text-center">
+                        <div class="text-2xl font-bold" id="todayPoints">0</div>
+                        <div class="text-sm opacity-90 mt-2">คะแนนวันนี้</div>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg text-center">
+                        <div class="text-2xl font-bold" id="totalScans">0</div>
+                        <div class="text-sm opacity-90 mt-2">จำนวนครั้งที่สแกน</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Scans -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-history text-gray-600 mr-2"></i>
+                    Recent Scans
+                </h2>
+                <div id="recentScans" class="space-y-3">
+                    <div class="text-gray-500 text-center py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No scans yet. Start scanning to see your history!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // =========================================================================
+    // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+    // =========================================================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbxHFlnv9TQ7aRfMOrmSQz2Hn-zQZnIMdUDrhIXGdX5y7vvXYAEIHA8JnyvoMlvx4EL0uw/exec";
+    // =========================================================================
+
+    let currentUser = null;
+
+    function showAppContent() {
+      $('#loginSection').hide();
+      $('#appContent').show();
+      $('#logoutBtn').removeClass('hidden');
+      if (!window.qrScanner) {
+        window.qrScanner = new QRPointScanner();
+      } else {
+        window.qrScanner.fetchUserHistory();
+      }
+    }
+
+    function handleLoginSuccess(user, uid) {
+      if (user && !user.error) {
+        currentUser = user;
+        localStorage.setItem('appUid', uid);
+        showAppContent();
+        Swal.fire({ icon:'success', title:'ยินดีต้อนรับ!', text:`สวัสดี ${user.name} (${user.class} เลขที่ ${user.number})` });
+      } else {
+        $('#loginError').removeClass('hidden').text('UID ไม่ถูกต้อง หรือไม่พบผู้ใช้ในระบบ');
+      }
+    }
+
+    // Login form using fetch() instead of google.script.run
+    $('#loginForm').on('submit', function(e) {
+      e.preventDefault();
+      const uid = $('#uid').val().trim();
+      if (!uid) return;
+      $('#loginError').addClass('hidden');
+      $('body').LoadingOverlay('show',{text:'Logging in...'});
+      
+      fetch(`${API_URL}?action=getUserInfo&uid=${uid}`)
+        .then(response => response.json())
+        .then(user => {
+            $('body').LoadingOverlay('hide');
+            handleLoginSuccess(user, uid);
+        })
+        .catch(error => {
+            $('body').LoadingOverlay('hide');
+            $('#loginError').removeClass('hidden').text('Login failed. Cannot connect to server.');
+        });
+    });
+
+    // Logout
+    $('#logoutBtn').on('click', () => {
+      localStorage.removeItem('appUid');
+      currentUser = null;
+      if (window.qrScanner && qrScanner.scanning) {
+        qrScanner.stopScanning();
+      }
+      $('#appContent').hide();
+      $('#logoutBtn').hide();
+      $('#loginSection').show();
+      $('#uid').val('');
+      $('#loginError').addClass('hidden').text('');
+    });
+
+    // Auto-login if stored
+    $(document).ready(() => {
+      const stored = localStorage.getItem('appUid');
+      if (stored) {
+        $('body').LoadingOverlay('show',{text:'Logging in...'});
+        fetch(`${API_URL}?action=getUserInfo&uid=${stored}`)
+            .then(response => response.json())
+            .then(user => {
+                $('body').LoadingOverlay('hide');
+                handleLoginSuccess(user, stored);
+            })
+            .catch(error => {
+                $('body').LoadingOverlay('hide');
+                $('#appContent').hide();
+                $('#loginSection').show();
+            });
+      } else {
+        $('#appContent').hide();
+        $('#loginSection').show();
+      }
+    });
+
+  // --- QRPointScanner Class ---
+  class QRPointScanner {
+    constructor() {
+      this.codeReader  = new ZXing.BrowserQRCodeReader();
+      this.scanning    = false;
+      this.stream      = null;
+      this.userHistory = [];
+      this.setupEventListeners();
+      this.fetchUserHistory();
+    }
+
+    setupEventListeners() {
+      $('#startScan').on('click', () => this.startScanning());
+      $('#stopScan').on('click', () => this.stopScanning());
+    }
+
+    fetchUserHistory() {
+      if (!currentUser) return;
+      $('body').LoadingOverlay('show', { text: 'Loading your data...' });
+      
+      fetch(`${API_URL}?action=getUserScans&uid=${currentUser.uid}`)
+        .then(response => response.json())
+        .then(history => {
+            $('body').LoadingOverlay('hide');
+            if (history.error) throw new Error(history.error);
+            this.userHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            this.updateStats();
+            this.updateRecentScans();
+        })
+        .catch(error => {
+            $('body').LoadingOverlay('hide');
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load your scan data.' });
+        });
+    }
+
+    async startScanning() {
+      try {
+        $('#scanStatus').html('<i class="fas fa-spinner fa-spin mr-1"></i>Starting camera...');
+        this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        $('#video')[0].srcObject = this.stream;
+        $('#startScan').addClass('hidden');
+        $('#stopScan').removeClass('hidden');
+        $('#scanStatus').html('<i class="fas fa-search mr-1"></i>Scanning for QR codes...');
+        this.scanning = true;
+        this.scanLoop();
+      } catch {
+        Swal.fire({ icon:'error',title:'Camera Error',text:'Unable to access camera.' });
+        $('#scanStatus').html('<i class="fas fa-exclamation-triangle mr-1"></i>Camera access denied');
+      }
+    }
+
+    stopScanning() {
+      this.scanning = false;
+      if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+      $('#video')[0].srcObject = null;
+      $('#startScan').removeClass('hidden');
+      $('#stopScan').addClass('hidden');
+      $('#scanStatus').html('<i class="fas fa-info-circle mr-1"></i>Click "Start Scanning" to begin');
+    }
+
+    async scanLoop() {
+      if (!this.scanning) return;
+      try {
+        const result = await this.codeReader.decodeOnceFromVideoDevice(undefined, 'video');
+        if (result) await this.processQRCode(result.text);
+      } catch {}
+      if (this.scanning) setTimeout(() => this.scanLoop(), 500);
+    }
+
+    async processQRCode(text) {
+      try {
+        const data = JSON.parse(text);
+        if (!data.event || !data.points || !data.date) throw new Error();
+        const today = new Date().toISOString().split('T')[0];
+        if (data.date !== today) {
+          return Swal.fire({ icon:'warning',title:'QR Code Expired',text:'You can only claim once per day.' });
+        }
+        if (this.userHistory.some(s => s.event === data.event && s.date === data.date)) {
+          return Swal.fire({ icon:'info',title:'Already Scanned',text:'ท่านได้รับแต้มจากบูทนี้แล้ว ไม่สามารถรับคะแนนซ้ำได้' });
+        }
+        this.stopScanning();
+        this.showSuccess(data);
+        await this.saveRecord(data);
+      } catch {
+        Swal.fire({ icon:'error',title:'Invalid QR Code',text:'QR code format not recognized.' });
+      }
+    }
+
+    showSuccess(data) {
+      confetti({ particleCount:100, spread:70, origin:{ y:0.6 } });
+      Swal.fire({
+        icon:'success',
+        title:'ได้รับคะแนน !',
+        html:`<div class="text-center">
+                <div class="text-lg font-semibold text-gray-800 mb-2">กิจกรรม: ${data.event}</div>
+                <div class="text-3xl font-bold text-green-600">+${data.points} Points!</div>
+              </div>`,
+        confirmButtonText:'เรียบร้อย!', confirmButtonColor:'#10b981'
+      });
+    }
+
+    saveRecord(data) {
+      const record = {
+        event:     data.event,
+        points:    parseInt(data.points, 10),
+        date:      data.date,
+        timestamp: new Date().toISOString(),
+        uid:       currentUser.uid,
+        name:      currentUser.name,
+        class:     currentUser.class,
+        number:    currentUser.number
+      };
+      
+      $('body').LoadingOverlay('show',{ text:'Syncing...' });
+      
+      // Send POST request with text/plain to avoid CORS preflight options issues
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      })
+      .then(response => response.json())
+      .then(resData => {
+        $('body').LoadingOverlay('hide');
+        if(resData.status === 'success') {
+           this.fetchUserHistory();
+        } else {
+           throw new Error("Save failed");
+        }
+      })
+      .catch(err => {
+        console.error('Save failed', err);
+        $('body').LoadingOverlay('hide');
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to save data to the server.' });
+      });
+    }
+
+    updateStats() {
+      const history = this.userHistory;
+      const today   = new Date().toISOString().split('T')[0];
+      const totalPts = history.reduce((s, x) => s + x.points, 0);
+      const todayPts = history.filter(x => x.date === today).reduce((s, x) => s + x.points, 0);
+      $('#totalPoints').text(totalPts);
+      $('#todayPoints').text(todayPts);
+      $('#totalScans').text(history.length);
+    }
+
+    updateRecentScans() {
+      const recent = this.userHistory.slice(0, 5);
+      if (!recent.length) {
+        return $('#recentScans').html(`
+          <div class="text-gray-500 text-center py-8">
+            <i class="fas fa-inbox text-4xl mb-2"></i>
+            <p>No scans yet. Start scanning to see your history!</p>
+          </div>`);
+      }
+      const html = recent.map(r => `
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center">
+            <div class="bg-indigo-100 p-2 rounded-full mr-3">
+              <i class="fas fa-calendar-check text-indigo-600"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-gray-800">${r.event}</div>
+              <div class="text-sm text-gray-600">${new Date(r.timestamp).toLocaleDateString()}</div>
+            </div>
+          </div>
+          <div class="text-green-600 font-bold">+${r.points}</div>
+        </div>`).join('');
+      $('#recentScans').html(html);
+    }
+  }
+</script>
+</body>
+</html>
