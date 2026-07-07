@@ -25,7 +25,7 @@
         .scanner-overlay { position: relative; display: inline-block; }
         .scanner-frame {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 100%; height: 200px; border-radius: 12px;
+            width: 200px; height: 200px; border-radius: 12px;
         }
         .scanner-corners { position: absolute; width: 30px; height: 30px; }
         .scanner-corners::before { content: ''; position: absolute; width: 100%; height: 3px; background: #10b981; }
@@ -105,24 +105,24 @@
                 </div>
             </div>
 
-            <!-- Points Summary -->
+            <!-- Points Summary (Updated for single-line display) -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-trophy text-yellow-600 mr-2"></i>
                     คะแนนสะสมของคุณ
                 </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold" id="totalPoints">0</div>
-                        <div class="text-sm opacity-90 mt-2">คะแนนทั้งหมด</div>
+                <div class="flex justify-between items-center gap-2">
+                    <div class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold" id="totalPoints">0</div>
+                        <div class="text-xs md:text-sm opacity-90 mt-1">ทั้งหมด</div>
                     </div>
-                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold" id="todayPoints">0</div>
-                        <div class="text-sm opacity-90 mt-2">คะแนนวันนี้</div>
+                    <div class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold" id="todayPoints">0</div>
+                        <div class="text-xs md:text-sm opacity-90 mt-1">วันนี้</div>
                     </div>
-                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold" id="totalScans">0</div>
-                        <div class="text-sm opacity-90 mt-2">จำนวนครั้งที่สแกน</div>
+                    <div class="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold" id="totalScans">0</div>
+                        <div class="text-xs md:text-sm opacity-90 mt-1">จำนวนครั้ง</div>
                     </div>
                 </div>
             </div>
@@ -145,10 +145,16 @@
 
 <script>
     // =========================================================================
-    // REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+    // POST Requests: Your Google Apps Script Web App URL (for SAVING data)
     // =========================================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxHFlnv9TQ7aRfMOrmSQz2Hn-zQZnIMdUDrhIXGdX5y7vvXYAEIHA8JnyvoMlvx4EL0uw/exec";
+    
     // =========================================================================
+    // GET Requests: OpenSheet API configuration (for READING data quickly)
+    // IMPORTANT: Make sure your Sheet is set to "Anyone with link can view"
+    // =========================================================================
+    const SPREADSHEET_ID = "1XlRSR3W1q1YeRnwLOrflX8Q9wBj_64JwMZeju6IM1kY"; // <-- REPLACE THIS WITH YOUR SHEET ID
+    const OPENSHEET_URL = `https://opensheet.elk.sh/${SPREADSHEET_ID}`;
 
     let currentUser = null;
 
@@ -174,7 +180,7 @@
       }
     }
 
-    // Login form using fetch() instead of google.script.run
+    // Login form using OpenSheet to fetch Users data
     $('#loginForm').on('submit', function(e) {
       e.preventDefault();
       const uid = $('#uid').val().trim();
@@ -182,15 +188,30 @@
       $('#loginError').addClass('hidden');
       $('body').LoadingOverlay('show',{text:'Logging in...'});
       
-      fetch(`${API_URL}?action=getUserInfo&uid=${uid}`)
+      fetch(`${OPENSHEET_URL}/Users`)
         .then(response => response.json())
-        .then(user => {
+        .then(users => {
             $('body').LoadingOverlay('hide');
-            handleLoginSuccess(user, uid);
+            // Find the user by matching UID (handles case insensitivity for column headers just in case)
+            const userMatch = users.find(u => String(u.UID || u.uid) === String(uid));
+            
+            if (userMatch) {
+                // Standardize object keys
+                const standardizedUser = {
+                    uid: userMatch.UID || userMatch.uid,
+                    name: userMatch.Name || userMatch.name,
+                    class: userMatch.Class || userMatch.class,
+                    number: userMatch.Number || userMatch.number
+                };
+                handleLoginSuccess(standardizedUser, uid);
+            } else {
+                handleLoginSuccess(null, uid); // Trigger error message
+            }
         })
         .catch(error => {
+            console.error(error);
             $('body').LoadingOverlay('hide');
-            $('#loginError').removeClass('hidden').text('Login failed. Cannot connect to server.');
+            $('#loginError').removeClass('hidden').text('Login failed. Check Spreadsheet ID and Sharing settings.');
         });
     });
 
@@ -213,13 +234,27 @@
       const stored = localStorage.getItem('appUid');
       if (stored) {
         $('body').LoadingOverlay('show',{text:'Logging in...'});
-        fetch(`${API_URL}?action=getUserInfo&uid=${stored}`)
+        fetch(`${OPENSHEET_URL}/Users`)
             .then(response => response.json())
-            .then(user => {
+            .then(users => {
                 $('body').LoadingOverlay('hide');
-                handleLoginSuccess(user, stored);
+                const userMatch = users.find(u => String(u.UID || u.uid) === String(stored));
+                
+                if (userMatch) {
+                    const standardizedUser = {
+                        uid: userMatch.UID || userMatch.uid,
+                        name: userMatch.Name || userMatch.name,
+                        class: userMatch.Class || userMatch.class,
+                        number: userMatch.Number || userMatch.number
+                    };
+                    handleLoginSuccess(standardizedUser, stored);
+                } else {
+                    $('#appContent').hide();
+                    $('#loginSection').show();
+                }
             })
             .catch(error => {
+                console.error(error);
                 $('body').LoadingOverlay('hide');
                 $('#appContent').hide();
                 $('#loginSection').show();
@@ -250,16 +285,29 @@
       if (!currentUser) return;
       $('body').LoadingOverlay('show', { text: 'Loading your data...' });
       
-      fetch(`${API_URL}?action=getUserScans&uid=${currentUser.uid}`)
+      // Fetch scan history via OpenSheet
+      fetch(`${OPENSHEET_URL}/Scans`)
         .then(response => response.json())
-        .then(history => {
+        .then(data => {
             $('body').LoadingOverlay('hide');
-            if (history.error) throw new Error(history.error);
+            if (data.error) throw new Error(data.error);
+            
+            // Filter records for the current user and standardize data keys
+            const history = data
+                .filter(row => String(row.UID || row.uid) === String(currentUser.uid))
+                .map(row => ({
+                    timestamp: row.Timestamp || row.timestamp,
+                    event: row.Event || row.event,
+                    points: parseInt(row.Points || row.points, 10),
+                    date: row.Date || row.date
+                }));
+
             this.userHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             this.updateStats();
             this.updateRecentScans();
         })
         .catch(error => {
+            console.error(error);
             $('body').LoadingOverlay('hide');
             Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load your scan data.' });
         });
@@ -346,6 +394,7 @@
       $('body').LoadingOverlay('show',{ text:'Syncing...' });
       
       // Send POST request with text/plain to avoid CORS preflight options issues
+      // This MUST still use API_URL (Google Apps Script) because OpenSheet is read-only
       fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
