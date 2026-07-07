@@ -533,16 +533,16 @@
                 }
             ],
             content: [
-                { image: 'logo', width:590, alignment: 'center', margin: [0, 0, 0, 10] },
-                { text: 'เกียรติบัตร', style: 'header', alignment: 'center', margin: [0, 0, 0, 15] },
+                { image: 'logo', width:590, alignment:'center', marginBottom:2 },
+                { text: 'โรงเรียนหนองบัวพิทยาคาร', style: 'header', alignment: 'center', margin: [0, 0, 0, 15] },
                 { text: 'ขอมอบเกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า', alignment: 'center', fontSize: 18, margin: [0, 0, 0, 10] },
-                { text: currentUser.name, alignment: 'center', fontSize: 32, bold: true, color: '#1d4ed8', margin: [0, 0, 0, 5] },
-                { text: `ชั้น ${currentUser.class} เลขที่ ${currentUser.number || '-'}`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 10] },
-                { text: `ได้เข้าร่วมกิจกรรมและสะสมคะแนนรวมทั้งสิ้น ${totalPts} คะแนน`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 15] },
+                { text: currentUser.name, alignment: 'center', fontSize: 28, bold: true, color: '#1d4ed8', margin: [0, 0, 0, 5] },
+                { text: `ได้เข้าร่วมกิจกรรมกิจกรรมวันวิทยาศาสตร์ ประจำปีการศึกษา 2569 `, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 15] },
                 { text: 'ขอให้มีความสุขความเจริญและประสบความสำเร็จตลอดไป', alignment: 'center', fontSize: 16 },
                 // { image: 'signature', width: 100, alignment: 'center', margin: [0, 15, 0, 5] },
                         { image:'signature', width:180, alignment:'center' },
-        { text:'(นายกวีวัฒน์ ฤาชัยลาม )', fontSize:20, alignment:'center' },
+        { text:'(นายกวีวัฒน์ ฤาชัยลาม )', fontSize:16, alignment:'center' },
+        { text:'(ผู้อำนวยการโรงเรียนหนองบัวพิทยาคาร)', fontSize:16, alignment:'center' },
                 { 
                     text: 'ให้ไว้ ณ วันที่ ' + new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }), 
                     alignment: 'center', 
@@ -552,7 +552,7 @@
             ],
             styles: {
                 header: {
-                    fontSize: 46,
+                    fontSize: 36,
                     bold: true,
                     color: '#b45309'
                 }
