@@ -18,6 +18,8 @@
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- ZXing barcode scanner -->
     <script src="https://unpkg.com/@zxing/library@0.15.1/umd/index.min.js"></script>
+    <!-- pdfMake -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
         * { font-family: 'Sarabun', sans-serif; }
@@ -130,6 +132,22 @@
                 </div>
             </div>
 
+            <!-- Certificate Section (Hidden by default) -->
+            <div id="certSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-award text-yellow-500 mr-2"></i>
+                    เกียรติบัตรของคุณ
+                </h2>
+                <div class="text-center p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <i class="fas fa-star text-4xl text-yellow-400 mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">ยินดีด้วย! คุณผ่านเกณฑ์แล้ว</h3>
+                    <p class="text-gray-600 mb-6">คุณสะสมคะแนนได้มากกว่า 80 คะแนน สามารถดาวน์โหลดเกียรติบัตรของคุณได้เลย</p>
+                    <button id="downloadCertBtn" class="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-md">
+                        <i class="fas fa-download mr-2"></i>ดาวน์โหลดเกียรติบัตร
+                    </button>
+                </div>
+            </div>
+
             <!-- Recent Scans -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -161,6 +179,20 @@
 
     let currentUser = null;
 
+    // Set up Thai fonts for pdfMake
+    pdfMake.fonts = {
+        CordiaTH: {
+            normal: 'https://sanwithz.github.io/font/CORDIA.ttf',
+            bold:   'https://sanwithz.github.io/font/Cordia%20New%20Bold.ttf'
+        },
+        promptTH: {
+            normal: 'https://sanwithz.github.io/font/Prompt-Regular.ttf',
+            bold: 'https://sanwithz.github.io/font/Prompt-Bold.ttf',
+            italic : 'https://sanwithz.github.io/font/Prompt-Italic.ttf',
+            italicBold : 'https://sanwithz.github.io/font/Prompt-BoldItalic.ttf'
+        }
+    };
+
     function showAppContent() {
       $('#loginSection').hide();
       $('#appContent').show();
@@ -179,7 +211,7 @@
         currentUser = user;
         localStorage.setItem('appUid', uid);
         showAppContent();
-        Swal.fire({ icon:'success', title:'ยินดีต้อนรับ!', text:`สวัสดี ${user.name} (${user.class})` });
+        Swal.fire({ icon:'success', title:'ยินดีต้อนรับ!', text:`สวัสดี ${user.name} (${user.class}` });
       } else {
         $('#loginError').removeClass('hidden').text('UID ไม่ถูกต้อง หรือไม่พบผู้ใช้ในระบบ');
       }
@@ -237,6 +269,7 @@
       $('#appContent').hide();
       $('#logoutBtn').hide();
       $('#refreshBtn').hide();
+      $('#certSection').addClass('hidden'); // Hide certificate section on logout
       $('#loginSection').show();
       $('#uid').val('');
       $('#loginError').addClass('hidden').text('');
@@ -292,6 +325,7 @@
     setupEventListeners() {
       $('#startScan').on('click', () => this.startScanning());
       $('#stopScan').on('click', () => this.stopScanning());
+      $('#downloadCertBtn').off('click').on('click', () => this.generateCertificate());
     }
 
     fetchUserHistory() {
@@ -436,9 +470,17 @@
       const today   = new Date().toISOString().split('T')[0];
       const totalPts = history.reduce((s, x) => s + x.points, 0);
       const todayPts = history.filter(x => x.date === today).reduce((s, x) => s + x.points, 0);
+      
       $('#totalPoints').text(totalPts);
       $('#todayPoints').text(todayPts);
       $('#totalScans').text(history.length);
+
+      // Trigger condition for certification (Total Points > 80)
+      if (totalPts > 80) {
+        $('#certSection').removeClass('hidden');
+      } else {
+        $('#certSection').addClass('hidden');
+      }
     }
 
     updateRecentScans() {
@@ -458,12 +500,59 @@
             </div>
             <div>
               <div class="font-semibold text-gray-800">${r.event}</div>
-              <div class="text-sm text-gray-600">${new Date(r.timestamp).toLocaleDateString()}</div>
+              <div class="text-sm text-gray-600">${new Date(r.timestamp).toLocaleDateString('th-TH')}</div>
             </div>
           </div>
           <div class="text-green-600 font-bold">+${r.points}</div>
         </div>`).join('');
       $('#recentScans').html(html);
+    }
+
+    generateCertificate() {
+        $('body').LoadingOverlay('show', { text: 'กำลังสร้างเกียรติบัตร...' });
+        const totalPts = this.userHistory.reduce((s, x) => s + x.points, 0);
+        
+        // Document Definition setup
+        const docDefinition = {
+            pageSize: 'A4',
+            pageOrientation: 'landscape',
+            pageMargins: [40, 60, 40, 60],
+            defaultStyle: {
+                font: 'promptTH' // Use promptTH as standard font
+            },
+            content: [
+                { text: 'เกียรติบัตร', style: 'header', alignment: 'center', margin: [0, 0, 0, 20] },
+                { text: 'ขอมอบเกียรติบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า', alignment: 'center', fontSize: 18, margin: [0, 0, 0, 15] },
+                { text: currentUser.name, alignment: 'center', fontSize: 32, bold: true, color: '#1d4ed8', margin: [0, 0, 0, 10] },
+                { text: `ได้เข้าร่วมกิจกรรมวันวิทยาศาสตร์ ประจำปีการศึกษา 2569`, alignment: 'center', fontSize: 18, margin: [0, 0, 0, 30] },
+                { text: 'ขอให้มีความสุขความเจริญและประสบความสำเร็จตลอดไป', alignment: 'center', fontSize: 16 },
+                { 
+                    text: 'ให้ไว้ ณ วันที่ ' + new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }), 
+                    alignment: 'center', 
+                    fontSize: 14, 
+                    margin: [0, 50, 0, 0] 
+                }
+            ],
+            styles: {
+                header: {
+                    fontSize: 46,
+                    bold: true,
+                    color: '#b45309'
+                }
+            }
+        };
+
+        try {
+            // Initiate the pdfMake creation process asynchronously resolving the URL fonts
+            pdfMake.createPdf(docDefinition).download(`Certificate_${currentUser.name}.pdf`);
+            
+            // Allow a small buffer before hiding overlay for fetching
+            setTimeout(() => $('body').LoadingOverlay('hide'), 1500);
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            $('body').LoadingOverlay('hide');
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถสร้างเกียรติบัตรได้ กรุณาลองอีกครั้ง' });
+        }
     }
   }
 </script>
